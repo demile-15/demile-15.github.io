@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LitGraph case study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#0a2540;--bg2:#0e2d4d;--bg3:#123659;--ink:#ffffff;--soft:#c6d7e8;--sky:#8fd3ff;--pink:#ff5c8a;--leaf:#7fe0a8;--lav:#cdb8ff;--rule:rgba(143,211,255,.22)}
+*{box-sizing:border-box;min-width:0}
+html{scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Hanken Grotesk",system-ui,sans-serif;overflow-x:clip}
+a{color:var(--sky)}
+.band{padding-block:clamp(28px,4vw,64px);padding-left:max(5vw,16px);padding-right:max(5vw,16px)}
+.wrap{max-width:1240px;margin:0 auto}
+.b2{background:var(--bg2)}
+.b3{background:var(--bg3)}
+h1{font-weight:300;font-size:clamp(36px,5vw,52px);line-height:1.05;letter-spacing:-.02em;margin:0 0 14px;text-wrap:balance}
+h2{font-weight:300;font-size:clamp(26px,3vw,34px);line-height:1.1;letter-spacing:-.02em;margin:0 0 20px;text-wrap:balance}
+h3{font-size:17px;font-weight:600;margin:0 0 6px}
+p{margin:0 0 12px}
+.lede{font-size:19px;color:var(--soft);max-width:62ch;margin-bottom:18px}
+.role{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:15px;color:var(--soft);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:12px 0;margin:0}
+.role b{color:var(--ink);font-weight:600}
+.muted{color:var(--soft)}
+.small{font-size:14px;color:var(--soft)}
+.ex{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:32px;align-items:stretch}
+pre{overflow-x:auto;background:var(--bg);border:1px solid var(--rule);padding:16px;margin:0 0 14px;font:13.5px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--soft)}
+pre .k{color:var(--sky)}
+pre .s{color:var(--pink)}
+.fig{position:relative;min-height:420px;background:var(--bg);border:1px solid var(--rule)}
+.fig>svg{position:absolute;inset:0;width:100%;height:100%}
+svg text{paint-order:stroke;stroke:var(--bg);stroke-width:4px;font-family:"Hanken Grotesk",system-ui,sans-serif}
+.key{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;font-size:14px;color:var(--soft)}
+.key span{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.key i{width:11px;height:11px;border-radius:50%;display:inline-block}
+.key i.sq{width:9px;height:12px;border-radius:2px}
+.layers{display:grid;gap:12px}
+.layer{display:grid;grid-template-columns:minmax(0,14em) minmax(0,1fr);gap:8px 24px;padding:16px 18px;border:1px solid var(--rule);background:var(--bg)}
+.layer.core{border-color:var(--sky)}
+.layer h3{margin:0}
+.who{font-size:14px;color:var(--soft)}
+.edges{display:grid;gap:6px}
+.edge{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;font-size:15px}
+.edge .r{color:var(--pink);font-size:13px;font-weight:600;white-space:nowrap}
+.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5em,1fr));gap:18px 24px;margin-bottom:40px}
+.fig-n{font-size:clamp(28px,3.2vw,40px);font-weight:300;line-height:1;letter-spacing:-.02em;white-space:nowrap}
+.fig-l{font-size:14px;color:var(--soft);margin-top:6px}
+.route{position:relative;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.line{position:absolute;left:2%;right:2%;top:27px;height:2px;background:var(--sky);opacity:.55}
+.dot{position:absolute;top:22px;left:2%;width:12px;height:12px;border-radius:50%;background:var(--pink);box-shadow:0 0 0 5px rgba(255,92,138,.25);animation:run 9s linear infinite}
+@keyframes run{from{left:2%}to{left:97%}}
+.st{position:relative}
+.node{width:56px;height:56px;border-radius:50%;background:var(--bg2);border:2px solid var(--sky);display:grid;place-items:center;font-weight:600;color:var(--sky);font-size:15px;position:relative;z-index:1;margin-bottom:14px}
+.st h3{font-size:16px}
+.st p{font-size:14px;color:var(--soft);margin-bottom:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:13px;padding:3px 9px;border-radius:999px;background:rgba(143,211,255,.12);color:var(--ink);white-space:nowrap}
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 40px}
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 48px}
+.prob{border-top:1px solid var(--rule);padding-top:16px}
+.prob p{color:var(--soft);font-size:15.5px}
+.res{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:4px 0 10px}
+.res .from{color:var(--soft);font-size:22px;font-weight:300;text-decoration:line-through;text-decoration-color:rgba(255,255,255,.35);white-space:nowrap}
+.res .to{color:var(--pink);font-size:30px;font-weight:400;white-space:nowrap}
+.res .what{font-size:14px;color:var(--soft)}
+ul{margin:0;padding-left:18px}
+li{margin-bottom:8px;color:var(--soft);font-size:15.5px}
+li b{color:var(--ink);font-weight:600}
+.find{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 28px;align-items:start;background:var(--bg);border-left:3px solid var(--pink);padding:20px 22px}
+.find .big{font-size:clamp(40px,5vw,56px);font-weight:300;color:var(--pink);line-height:1;white-space:nowrap}
+.find p{color:var(--soft);font-size:15.5px;margin:0 0 10px;max-width:70ch}
+.foot{font-size:14px;color:var(--soft);border-top:1px solid var(--rule);padding-top:18px;margin:0}
+@media(max-width:900px){.route{grid-template-columns:repeat(2,minmax(0,1fr))}.line,.dot{display:none}.three{grid-template-columns:minmax(0,1fr)}.ex{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.route{grid-template-columns:minmax(0,1fr);gap:0}.st{display:grid;grid-template-columns:56px minmax(0,1fr);gap:0 14px;padding-bottom:18px}.st::before{content:"";position:absolute;left:27px;top:56px;bottom:0;width:2px;background:var(--sky);opacity:.45}.st:last-child::before{display:none}.node{margin:0}.cols{grid-template-columns:minmax(0,1fr)}.lede{font-size:17px}.layer{grid-template-columns:minmax(0,1fr)}.find{grid-template-columns:minmax(0,1fr)}.fig{min-height:480px}}
+@media(prefers-reduced-motion:reduce){.dot{animation:none;display:none}}
+</style>
+</head>
+<body>
+<main id="main">
+
+<section class="band">
+<div class="wrap">
+  <h1>LitGraph: a knowledge graph of biology research</h1>
+  <p class="lede">Imagine a learning tool where you type in a topic and get back relevant research papers, related concepts, and how they all connect.</p>
+  <p class="lede">LitGraph is a prototype of this tool for molecular biology. It links research papers to the genes, compounds, pathways and diseases that they mention.</p>
+  <div class="role">
+    <span><b>My role:</b> sole engineer (I built and designed it with guidance from my company's CEO and CTO).</span>
+    <span><b>When:</b> July to August 2026</span>
+    <span><b>Status:</b> internal tool</span>
+  </div>
+</div>
+</section>
+
+<section class="band b2">
+<div class="wrap">
+  <h2>Example: searching one rice gene</h2>
+  <div class="ex">
+    <div>
+      <p>OsWRKY45 is a well-studied rice gene, known for its role in disease resistance. I type its name, and the dashboard runs this query under the hood:</p>
+<pre><span class="k">MATCH</span> (g:Gene {name: <span class="s">'OsWRKY45'</span>})
+<span class="k">MATCH</span> (g)&lt;-[:MENTIONS]-(p:Paper)
+<span class="k">OPTIONAL MATCH</span> (g)-[:PARTICIPATES_IN]-&gt;(w:Pathway)
+<span class="k">OPTIONAL MATCH</span> (g)-[:ASSOCIATED_WITH]-&gt;(t:Trait)
+<span class="k">OPTIONAL MATCH</span> (p)-[:MENTIONS]-&gt;(c:Compound)
+<span class="k">RETURN</span> g, p, w, t, c</pre>
+      <p class="muted">The result is a searchable graph that shows 69 papers that mention it, the pathway it belongs to, two traits it's linked to, and the compounds those papers discuss.</p>
+      <p class="small">Simplified drawing: only a sample of the papers and compounds is shown.</p>
+    </div>
+    <div>
+      <div class="fig" id="exfig"><svg id="exsvg" role="img" aria-label="Graph of the gene OsWRKY45 linked to papers, a pathway, two traits, and compounds"></svg></div>
+      <div class="key">
+        <span><i style="background:var(--pink)"></i>Gene</span>
+        <span><i class="sq" style="background:var(--ink)"></i>Paper</span>
+        <span><i style="background:var(--sky)"></i>Pathway or organism</span>
+        <span><i style="background:var(--leaf)"></i>Trait</span>
+        <span><i style="background:var(--lav)"></i>Compound</span>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="band">
+<div class="wrap">
+  <h2>How the graph is organized</h2>
+  <div class="layers">
+    <div class="layer core">
+      <div><h3>Core</h3><div class="who">Papers, authors, topics and citations. Common to any field.</div></div>
+      <div class="edges">
+        <div class="edge"><span>Paper</span><span class="r">CITES →</span><span>Paper</span></div>
+        <div class="edge"><span>Author</span><span class="r">AUTHORED →</span><span>Paper</span></div>
+        <div class="edge"><span>Paper</span><span class="r">IN_CATEGORY →</span><span>Category (arXiv code or MeSH topic)</span></div>
+      </div>
+    </div>
+    <div class="layer">
+      <div><h3>Biology layer</h3><div class="who">Genes, compounds, pathways and diseases. A separate package on top of the core.</div></div>
+      <div class="edges">
+        <div class="edge"><span>Paper</span><span class="r">MENTIONS →</span><span>Gene · Compound · Disease · Organism</span></div>
+        <div class="edge"><span>Gene</span><span class="r">PARTICIPATES_IN →</span><span>Pathway</span></div>
+        <div class="edge"><span>Pathway</span><span class="r">PRODUCES →</span><span>Compound</span></div>
+        <div class="edge"><span>Disease</span><span class="r">IS_A →</span><span>Disease</span></div>
+      </div>
+    </div>
+    <div class="layer">
+      <div><h3>Rice layer</h3><div class="who">Rice traits, added for the rice corpus.</div></div>
+      <div class="edges">
+        <div class="edge"><span>Gene</span><span class="r">ASSOCIATED_WITH →</span><span>Trait</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="band b2">
+<div class="wrap">
+  <h2>The pipeline</h2>
+  <div class="figs">
+    <div><div class="fig-n">~298K</div><div class="fig-l">papers in the main graph</div></div>
+    <div><div class="fig-n">51,166</div><div class="fig-l">papers in a rice-focused graph, 1945 to 2026</div></div>
+    <div><div class="fig-n">282,558</div><div class="fig-l">links in the rice graph</div></div>
+    <div><div class="fig-n">13</div><div class="fig-l">data sources: 5 for papers and citations, 8 for biology</div></div>
+    <div><div class="fig-n">~5 weeks</div><div class="fig-l">from first commit to a working dashboard</div></div>
+  </div>
+  <div class="route">
+    <div class="line"></div><div class="dot"></div>
+    <div class="st"><div class="node">1</div><div><h3>Sources</h3><p>Research paper platforms and standardized biology databases.</p><div class="chips"><span class="chip">arXiv API</span><span class="chip">Kaggle arXiv</span><span class="chip">PubMed API</span><span class="chip">PubMed archive</span><span class="chip">Semantic Scholar</span><span class="chip">PubTator3</span><span class="chip">Gene Ontology</span><span class="chip">NCBI Gene</span><span class="chip">Disease Ontology</span><span class="chip">ChEBI</span><span class="chip">MeSH</span><span class="chip">Biomappings</span><span class="chip">Reactome</span></div></div></div>
+    <div class="st"><div class="node">2</div><div><h3>Ingestion</h3><p>Batch, embed, and upload paper/ entity nodes to the graph. Run as daily jobs.</p><div class="chips"><span class="chip">SPECTER2 embedding</span><span class="chip">citations</span><span class="chip">PubTator3 mentions</span></div></div></div>
+    <div class="st"><div class="node">3</div><div><h3>Entity resolution</h3><p>Resolve different sources' ID schemes into one.</p><div class="chips"><span class="chip">ChEBI ↔ MeSH</span><span class="chip">LocusTag → Entrez</span><span class="chip">DOID → MeSH</span></div></div></div>
+    <div class="st"><div class="node">4</div><div><h3>Graph</h3><p>One central schema and graph writer, with support for two databases.</p><div class="chips"><span class="chip">ArcadeDB</span><span class="chip">Neo4j</span><span class="chip">full-text + vector index</span></div></div></div>
+    <div class="st"><div class="node">5</div><div><h3>Query</h3><p>Search and browse from the command line or the dashboard.</p><div class="chips"><span class="chip">keyword</span><span class="chip">semantic</span><span class="chip">citation walks</span><span class="chip">entity pages</span><span class="chip">CLI</span><span class="chip">Streamlit</span></div></div></div>
+  </div>
+</div>
+</section>
+
+<section class="band b3">
+<div class="wrap">
+  <h2>Design decisions</h2>
+  <div class="three">
+    <div>
+      <h3>A base layer that works for any field</h3>
+      <ul>
+        <li>The core only has papers, authors and topics, and citations.</li>
+        <li>The graph becomes domain-specific by adding a separate layer with its own node types on top.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>One schema, one writer</h3>
+      <ul>
+        <li>All node and edge types are built from one generic node and edge definition.</li>
+        <li>One graph writer checks and executes every write.</li>
+        <li>A new source only needs to declare its type variant.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Grounded data before LLMs</h3>
+      <ul>
+        <li>No LLMs or PDF parsing yet. Entities come from PubTator3 and are mapped to standard IDs, while relationships come from curated databases like Gene Ontology and Reactome.</li>
+        <li>Every link can be traced to a source.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="band">
+<div class="wrap">
+  <h2>Problems that came up (and got fixed)</h2>
+  <div class="cols">
+    <div class="prob"><h3>Slow entity pages</h3><div class="res"><span class="from">60s</span><span class="to">1.7s</span><span class="what">per paper page, in 298K-paper graph</span></div><p>Opening a paper or gene page took up to a minute. I found that ArcadeDB’s query planner scans the whole graph unless the starting node is named and written first. So, I rewrote the queries to ensure this.</p></div>
+    <div class="prob"><h3>Slow first search after DB restart</h3><div class="res"><span class="from">504s</span><span class="to">1.3s</span><span class="what">first query after restart</span></div><p>After every restart, the first search waited about 8 minutes while the database rebuilt its vector index. So, I added a service that runs a warm-up query right after each restart, so users don't experience the wait.</p></div>
+    <div class="prob"><h3>Slow bulk writes</h3><div class="res"><span class="to">~100×</span><span class="what">faster writes with SQL than with Cypher</span></div><p>Writing data through Cypher was too slow for bulk imports. So, I moved all writes to SQL over HTTP and kept Cypher for reads.</p></div>
+    <div class="prob"><h3>PubMed import cap</h3><div class="res"><span class="from">9,800</span><span class="to">51,166</span><span class="what">rice papers imported</span></div><p>NCBI's API errors out after about 9,500 results per query. So, I split imports into date ranges that stay under the limit.</p></div>
+    <div class="prob"><h3>Empty semantic search</h3><div class="res"><span class="from">0</span><span class="to">fixed</span><span class="what">results on the big graph</span></div><p>Semantic search returned nothing on the large graph. I found out that deleted index entries were crowding out real results. So, I upgraded the database and that fixed it.</p></div>
+    <div class="prob"><h3>Missing embeddings</h3><div class="res"><span class="from">108K</span><span class="to">0</span><span class="what">papers missing vectors</span></div><p>A GPU server outage silently left 108K papers without embeddings. So, I added retries and a command that finds and fills in any missing embeddings.</p></div>
+  </div>
+</div>
+</section>
+
+<section class="band b2">
+<div class="wrap">
+  <h2>Limitation: The graph is only as complete as its entity extraction</h2>
+  <div class="find">
+    <div class="big">46.7%</div>
+    <div>
+      <p>well-annotated rice genes have no papers linked to them. Manually checking showed that most of them do appear in papers' titles and abstracts, but in short forms like HYR and FZP.</p>
+      <p>The extractor skips these short symbols because they look like ordinary words, so some genes look less studied than they really are.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="band">
+<div class="wrap">
+  <div class="cols">
+    <div>
+      <h2>Stack</h2>
+      <ul>
+        <li><b>Python 3.11</b>, Pydantic, Typer, httpx, uv, pytest</li>
+        <li><b>ArcadeDB</b> (deployed) and <b>Neo4j</b>, with Cypher for reads and SQL for writes</li>
+        <li><b>SPECTER2</b> embeddings (PyTorch) on a GPU server, with a vector index for semantic search</li>
+        <li><b>PubTator3</b> for entity extraction; NCBI, Semantic Scholar and arXiv APIs</li>
+        <li><b>Streamlit</b> dashboard with graph views and a query console; Docker; a cloud VM with cron</li>
+      </ul>
+    </div>
+    <div>
+      <h2>What's next</h2>
+      <ul>
+        <li><b>Ask questions in plain English.</b> Ground queries with fixed query templates (gene → pathway, author → papers) to avoid hallucinations.</li>
+        <li><b>Use an LLM to extract semantic relations from full-text PDF</b>, not just mentions.</li>
+        <li><b>Add more curated sources</b> for pathways and interactions.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="band" style="padding-top:0">
+<div class="wrap">
+  <p class="foot">Numbers are from the project's logs and reports as of August 2026. The code is in a private company repo, so I can't share it here but am happy to walk through it in an interview.</p>
+</div>
+</section>
+
+</main>
+
+<script>
+{
+/* example graph */
+const C={gene:'var(--pink)',path:'var(--sky)',org:'var(--sky)',trait:'var(--leaf)',comp:'var(--lav)'};
+const nodes=[
+  {id:'g',t:'gene',x:.52,y:.5,r:15,label:'OsWRKY45',sub:'Gene',pos:'b'},
+  {id:'path',t:'path',x:.64,y:.08,r:10,label:'regulation of DNA-templated transcription',sub:'Pathway · GO',pos:'r'},
+  {id:'salt',t:'trait',x:.93,y:.4,r:10,label:'salt tolerance',sub:'Trait',pos:'be'},
+  {id:'dro',t:'trait',x:.86,y:.76,r:10,label:'drought tolerance',sub:'Trait',pos:'be'},
+  {id:'org',t:'org',x:.03,y:.05,r:9,label:'Oryza sativa',sub:'Organism',pos:'r'},
+  {id:'sa',t:'comp',x:.03,y:.94,r:9,label:'Salicylic acid',sub:'Compound',pos:'r'},
+  {id:'aba',t:'comp',x:.44,y:.94,r:9,label:'Abscisic acid',sub:'Compound',pos:'r'}
+];
+const papers=[[.16,.3],[.27,.36],[.08,.44],[.22,.48],[.33,.56],[.12,.6],[.25,.66]];
+const draw=()=>{
+  const s=document.getElementById('exsvg');if(!s)return;const W=s.clientWidth,H=s.clientHeight;if(!W||!H)return;
+  const narrow=W<520,fs=narrow?12.5:14,wrapAt=narrow?15:22;
+  const P=(x,y)=>[22+x*(W-44),18+y*(H-36)];
+  const at={};nodes.forEach(n=>at[n.id]=P(n.x,n.y));
+  const pp=papers.map(([x,y])=>P(x,y));
+  const ln=(a,b,col,w,dash)=>`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${col}" stroke-width="${w}" stroke-opacity=".6" ${dash?'stroke-dasharray="4 4"':''}/>`;
+  let out='';
+  pp.forEach(p=>out+=ln(p,at.g,'var(--pink)',1.4));
+  out+=ln(pp[0],pp[1],'var(--ink)',1,true)+ln(pp[2],pp[3],'var(--ink)',1,true)+ln(pp[5],pp[6],'var(--ink)',1,true);
+  out+=ln(pp[0],at.org,'var(--sky)',1)+ln(pp[2],at.org,'var(--sky)',1);
+  out+=ln(pp[5],at.sa,'var(--lav)',1)+ln(pp[6],at.aba,'var(--lav)',1)+ln(pp[4],at.aba,'var(--lav)',1);
+  out+=ln(at.g,at.path,'var(--sky)',2)+ln(at.g,at.salt,'var(--leaf)',2)+ln(at.g,at.dro,'var(--leaf)',2);
+  const el=(a,b,f,txt,dy,anc)=>{const x=a[0]+(b[0]-a[0])*f,y=a[1]+(b[1]-a[1])*f+dy;return `<text x="${x}" y="${y}" text-anchor="${anc||'middle'}" ${anc?'dx="-10"':''} font-size="11.5" font-weight="600" fill="var(--soft)">${txt}</text>`};
+  if(!narrow){out+=el(at.g,at.salt,.5,'ASSOCIATED_WITH',-8)+el(at.g,at.dro,.55,'ASSOCIATED_WITH',16)+el(pp[3],at.g,.55,'MENTIONS',-10)+el(at.g,at.path,.5,'PARTICIPATES_IN',0,'end');}
+  pp.forEach(p=>out+=`<rect x="${p[0]-6}" y="${p[1]-8}" width="12" height="16" rx="2" fill="var(--ink)"/>`);
+  const wrap=t=>{const w=t.split(' ');const L=[];let c='';w.forEach(x=>{if((c+' '+x).trim().length>wrapAt&&c){L.push(c);c=x}else c=(c+' '+x).trim()});L.push(c);return L};
+  nodes.forEach(n=>{
+    const [x,y]=at[n.id];const big=n.id==='g';
+    out+=`<circle cx="${x}" cy="${y}" r="${n.r}" fill="${C[n.t]}"${big?' stroke="rgba(255,92,138,.3)" stroke-width="10"':''}/>`;
+    const lines=wrap(n.label);const lh=fs+3;
+    let ax,anchor,ty;
+    if(n.pos==='r'){anchor='start';ax=x+n.r+8;ty=y-(lines.length*lh)/2+3;}
+    else if(n.pos==='be'){anchor='end';ax=x+n.r;ty=y+n.r+16;}
+    else{anchor='middle';ax=x;ty=y+n.r+(big?22:16);}
+    out+=`<text x="${ax}" y="${ty}" text-anchor="${anchor}" font-size="11.5" fill="var(--soft)">${n.sub}</text>`;
+    lines.forEach((l,i)=>out+=`<text x="${ax}" y="${ty+(i+1)*lh}" text-anchor="${anchor}" font-size="${big?fs+3:fs}" font-weight="${big?700:500}" fill="var(--ink)">${l}</text>`);
+  });
+  const lab=P(.2,.75);
+  out+=`<text x="${lab[0]}" y="${lab[1]}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="var(--ink)">69 papers</text>`;
+  s.innerHTML=out;
+};
+const ro=new ResizeObserver(draw);ro.observe(document.getElementById('exsvg'));
+
+}
+</script>
+</body>
+</html>
